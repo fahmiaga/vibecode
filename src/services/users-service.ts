@@ -78,9 +78,9 @@ export async function loginUser(email: string, password: string) {
   return { data: token };
 }
 
-export async function getCurrentUser(token: string) {
+async function findSessionByToken(token: string) {
   const session = await db
-    .select({ userId: sessions.userId })
+    .select({ id: sessions.id, userId: sessions.userId })
     .from(sessions)
     .where(eq(sessions.token, token))
     .limit(1);
@@ -89,6 +89,11 @@ export async function getCurrentUser(token: string) {
   if (!foundSession) {
     throw new UnauthorizedError();
   }
+  return foundSession;
+}
+
+export async function getCurrentUser(token: string) {
+  const foundSession = await findSessionByToken(token);
 
   const user = await db
     .select({
@@ -114,4 +119,14 @@ export async function getCurrentUser(token: string) {
       created_at: foundUser.createdAt,
     },
   };
+}
+
+export async function logoutUser(token: string) {
+  const result = await db.delete(sessions).where(eq(sessions.token, token));
+
+  if (result[0].affectedRows === 0) {
+    throw new UnauthorizedError();
+  }
+
+  return { data: "ok" };
 }
