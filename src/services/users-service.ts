@@ -78,9 +78,9 @@ export async function loginUser(email: string, password: string) {
   return { data: token };
 }
 
-export async function getCurrentUser(token: string) {
+async function findSessionByToken(token: string) {
   const session = await db
-    .select({ userId: sessions.userId })
+    .select({ id: sessions.id, userId: sessions.userId })
     .from(sessions)
     .where(eq(sessions.token, token))
     .limit(1);
@@ -89,6 +89,11 @@ export async function getCurrentUser(token: string) {
   if (!foundSession) {
     throw new UnauthorizedError();
   }
+  return foundSession;
+}
+
+export async function getCurrentUser(token: string) {
+  const foundSession = await findSessionByToken(token);
 
   const user = await db
     .select({
@@ -117,18 +122,11 @@ export async function getCurrentUser(token: string) {
 }
 
 export async function logoutUser(token: string) {
-  const session = await db
-    .select({ id: sessions.id })
-    .from(sessions)
-    .where(eq(sessions.token, token))
-    .limit(1);
+  const result = await db.delete(sessions).where(eq(sessions.token, token));
 
-  const foundSession = session[0];
-  if (!foundSession) {
+  if (result[0].affectedRows === 0) {
     throw new UnauthorizedError();
   }
-
-  await db.delete(sessions).where(eq(sessions.id, foundSession.id));
 
   return { data: "ok" };
 }
