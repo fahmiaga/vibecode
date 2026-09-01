@@ -18,6 +18,13 @@ export class LoginFailedError extends Error {
   }
 }
 
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "UnauthorizedError";
+  }
+}
+
 export async function registerUser(
   name: string,
   email: string,
@@ -69,4 +76,42 @@ export async function loginUser(email: string, password: string) {
   });
 
   return { data: token };
+}
+
+export async function getCurrentUser(token: string) {
+  const session = await db
+    .select({ userId: sessions.userId })
+    .from(sessions)
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  const foundSession = session[0];
+  if (!foundSession) {
+    throw new UnauthorizedError();
+  }
+
+  const user = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.id, foundSession.userId))
+    .limit(1);
+
+  const foundUser = user[0];
+  if (!foundUser) {
+    throw new UnauthorizedError();
+  }
+
+  return {
+    data: {
+      id: foundUser.id,
+      name: foundUser.name,
+      email: foundUser.email,
+      created_at: foundUser.createdAt,
+    },
+  };
 }
