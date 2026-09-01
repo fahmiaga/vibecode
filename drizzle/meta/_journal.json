@@ -1,1 +1,13 @@
-{"version":"7","dialect":"mysql","entries":[]}
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1788246403643,
+      "tag": "0000_military_talon",
+      "breakpoints": true
+    }
+  ]
+}
